@@ -1,18 +1,15 @@
 # Rock-Paper-Scissors Visual Recognition System
 
-A production-grade deep learning system for identifying and classifying hand gestures (Rock, Paper, Scissors) from image data. Built with TensorFlow/Keras using MobileNetV2 transfer learning, achieving **100% test accuracy** on a held-out test set.
+An image classification system that identifies hand gestures (Rock, Paper, Scissors) using deep learning. Built with TensorFlow/Keras and MobileNetV2 transfer learning.
 
 ## Results
 
-| Metric | Score |
-|--------|-------|
-| **Test Accuracy** | **100.00%** |
-| Test Loss | 0.0410 |
-| Precision (all classes) | 1.0000 |
-| Recall (all classes) | 1.0000 |
-| F1-Score (all classes) | 1.0000 |
+- **Test Accuracy: 100%** on 329 unseen images
+- Test Loss: 0.0410
+- Precision / Recall / F1: 1.00 across all classes
+- Zero misclassifications
 
-### Confusion Matrix (329 test samples)
+### Confusion Matrix
 
 |  | Predicted Paper | Predicted Rock | Predicted Scissors |
 |--|:-:|:-:|:-:|
@@ -20,79 +17,34 @@ A production-grade deep learning system for identifying and classifying hand ges
 | **Rock** | 0 | 109 | 0 |
 | **Scissors** | 0 | 0 | 113 |
 
-Zero misclassifications across all gesture classes.
-
 ## Project Structure
 
 ```
 RPS-aiml/
-├── main.py                    # Entry point - full pipeline orchestration
-├── requirements.txt           # Python dependencies
+├── main.py                 # Entry point for training, evaluation, prediction
+├── requirements.txt
 ├── src/
-│   ├── __init__.py
-│   ├── config.py              # Centralized configuration & hyperparameters
-│   ├── data_loader.py         # Data ingestion, augmentation & pipeline
-│   ├── model.py               # MobileNetV2 transfer learning architecture
-│   ├── train.py               # Two-phase training pipeline
-│   ├── evaluate.py            # Model evaluation & metrics generation
-│   ├── predict.py             # Single-image prediction interface (RPSClassifier)
-│   └── visualize.py           # Publication-quality result visualization
-├── data/                      # Dataset (not tracked in git)
-│   ├── rock/                  # 726 images
-│   ├── paper/                 # 712 images
-│   └── scissors/              # 750 images
-├── models/                    # Saved model artifacts
-│   ├── best_model.keras       # Best checkpoint (by val_accuracy)
-│   └── final_model.keras      # Final epoch model
-└── results/                   # Evaluation results & visualizations
-    ├── training_curves.png
-    ├── confusion_matrix.png
-    ├── per_class_metrics.png
-    ├── sample_predictions.png
-    ├── confidence_distribution.png
-    ├── class_distribution.png
-    ├── evaluation_results.json
-    ├── training_history.json
-    └── training_log.csv
+│   ├── config.py           # Settings and hyperparameters
+│   ├── data_loader.py      # Loads images, splits data, applies augmentation
+│   ├── model.py            # MobileNetV2 transfer learning model
+│   ├── train.py            # Two-phase training (feature extraction + fine-tuning)
+│   ├── evaluate.py         # Evaluation metrics and classification report
+│   ├── predict.py          # Predict gesture from a single image
+│   └── visualize.py        # Generates plots and charts
+├── data/                   # Dataset (rock/, paper/, scissors/)
+├── models/                 # Saved trained models (.keras)
+└── results/                # Charts, metrics, training logs
 ```
 
-## Architecture
+## How It Works
 
-**Two-Phase Transfer Learning with MobileNetV2:**
+The model uses **MobileNetV2** (pretrained on ImageNet) as a feature extractor with a custom classification head on top.
 
-### Phase 1: Feature Extraction (Frozen Backbone)
-- MobileNetV2 pretrained on ImageNet with frozen weights
-- Only the classification head is trained
-- Learning rate: 1e-3
-- Result: 99.70% validation accuracy
+**Phase 1 — Feature Extraction:** The MobileNetV2 backbone is frozen and only the classification head trains. This gets us to ~99.7% accuracy quickly.
 
-### Phase 2: Fine-Tuning (Partial Backbone Unfreezing)
-- Top 54 layers of MobileNetV2 unfrozen for domain adaptation
-- Data augmentation applied (rotation, shift, shear, zoom, flip, brightness)
-- Learning rate: 1e-4 (10x lower for stability)
-- Result: 100.00% validation accuracy
+**Phase 2 — Fine-Tuning:** The top layers of MobileNetV2 are unfrozen and the whole model trains together with a lower learning rate. This pushes accuracy to 100%.
 
-### Model Summary
-
-| Component | Details |
-|-----------|---------|
-| Backbone | MobileNetV2 (ImageNet pretrained) |
-| Pooling | Global Average Pooling (1280-d features) |
-| Head | Dense(256)→BN→ReLU→Drop(0.5)→Dense(64)→BN→ReLU→Drop(0.3)→Softmax(3) |
-| Total Parameters | 2.6M (345K trainable in Phase 1) |
-| Regularization | L2 weight decay, dropout, batch normalization |
-
-## Features
-
-- **Transfer Learning**: MobileNetV2 backbone for robust feature extraction
-- **Two-Phase Training**: Feature extraction then domain-specific fine-tuning
-- **Data Augmentation**: Rotation, shift, shear, zoom, flip, brightness variation
-- **Stratified Splitting**: Balanced train/validation/test splits (70/15/15)
-- **Class Weighting**: Automatic handling of class imbalance
-- **Training Callbacks**: Early stopping, LR scheduling, model checkpointing
-- **Comprehensive Evaluation**: Per-class precision/recall/F1, confusion matrix
-- **Production API**: `RPSClassifier` class for easy integration
-- **6 Visualization Plots**: Training curves, confusion matrix, per-class metrics, sample predictions, confidence distribution, class distribution
+Data augmentation (rotation, zoom, flips, brightness shifts) is applied during fine-tuning to make the model more robust.
 
 ## Setup
 
@@ -102,40 +54,38 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Full Pipeline (Train + Evaluate + Visualize)
+### Train + Evaluate + Generate Visualizations
 ```bash
 python main.py
 ```
 
-### Evaluate Existing Model
+### Evaluate an Already Trained Model
 ```bash
 python main.py --evaluate
 ```
 
-### Predict Single Image
+### Predict a Single Image
 ```bash
 python main.py --predict path/to/image.png
 ```
 
-### Programmatic Usage
+### Use in Code
 ```python
 from src.predict import RPSClassifier
 
 classifier = RPSClassifier()
-result = classifier.predict("path/to/hand_gesture.png")
+result = classifier.predict("hand_gesture.png")
 
-print(f"Gesture: {result['label']}")          # "rock", "paper", or "scissors"
-print(f"Confidence: {result['confidence']:.2%}")  # e.g., "99.87%"
-print(f"Probabilities: {result['probabilities']}")
+print(result['label'])        # "rock", "paper", or "scissors"
+print(result['confidence'])   # e.g. 0.9998
 ```
 
 ## Dataset
 
 - **Source**: Julien de la Bruère-Terreault (CC-BY-SA 4.0)
-- **Total Images**: 2,188 (Rock: 726, Paper: 712, Scissors: 750)
-- **Format**: 300×200 RGB PNG images on green background
-- **Preprocessing**: Resized to 150×150, MobileNetV2 normalization ([-1, 1])
-- **Split**: 70% Train (1530) / 15% Validation (329) / 15% Test (329)
+- **Images**: 2,188 total — Rock (726), Paper (712), Scissors (750)
+- **Format**: 300×200 RGB PNG on green background
+- **Split**: 70% train / 15% validation / 15% test (stratified)
 
 ## License
 
