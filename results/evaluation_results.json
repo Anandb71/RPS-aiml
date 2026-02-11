@@ -1,0 +1,44 @@
+{
+  "test_loss": 0.042970288544893265,
+  "test_accuracy": 1.0,
+  "overall_accuracy": 1.0,
+  "per_class_metrics": {
+    "paper": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 107
+    },
+    "rock": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 109
+    },
+    "scissors": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 113
+    }
+  },
+  "confusion_matrix": [
+    [
+      107,
+      0,
+      0
+    ],
+    [
+      0,
+      109,
+      0
+    ],
+    [
+      0,
+      0,
+      113
+    ]
+  ],
+  "classification_report": "              precision    recall  f1-score   support\n\n       paper     1.0000    1.0000    1.0000       107\n        rock     1.0000    1.0000    1.0000       109\n    scissors     1.0000    1.0000    1.0000       113\n\n    accuracy                         1.0000       329\n   macro avg     1.0000    1.0000    1.0000       329\nweighted avg     1.0000    1.0000    1.0000       329\n",
+  "num_test_samples": 329
+}
